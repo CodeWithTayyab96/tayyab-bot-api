@@ -79,41 +79,66 @@ export function calculate(expr) {
 }
 
 export async function lookupCountry(name) {
-  const res = await fetch(
-    `https://restcountries.com/v3.1/name/${encodeURIComponent(name)}?fullText=false`,
-    { headers: { 'User-Agent': BROWSER_UA } }
-  );
-  if (res.status === 404) return null;
+  const safeName = name.replace(/"/g, '\\"');
+  const query = `{ countries(filter: { name: { regex: "${safeName}" } }) { code name capital currency emoji languages { name } } }`;
+  const res = await fetch('https://countries.trevorblades.com/', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'User-Agent': BROWSER_UA },
+    body: JSON.stringify({ query }),
+  });
   if (!res.ok) throw new Error('Country API failed: ' + res.status);
-  const data = await res.json();
-  if (!data.length) return null;
-  const c = data[0];
+  const json = await res.json();
+  const countries = json.data?.countries;
+  if (!countries || !countries.length) {
+    const normalized = name.charAt(0).toUpperCase() + name.slice(1).toLowerCase();
+    if (normalized === name) return null;
+    const retryQuery = `{ countries(filter: { name: { regex: "${normalized.replace(/"/g, '\\"')}" } }) { code name capital currency emoji languages { name } } }`;
+    const retryRes = await fetch('https://countries.trevorblades.com/', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'User-Agent': BROWSER_UA },
+      body: JSON.stringify({ query: retryQuery }),
+    });
+    if (!retryRes.ok) throw new Error('Country API failed: ' + retryRes.status);
+    const retryJson = await retryRes.json();
+    const retryCountries = retryJson.data?.countries;
+    if (!retryCountries || !retryCountries.length) return null;
+    const rc = retryCountries[0];
+    return {
+      name: rc.name || name,
+      capital: rc.capital || 'N/A',
+      currency: rc.currency || 'N/A',
+      flag: rc.emoji || '',
+      languages: rc.languages ? rc.languages.map(l => l.name) : [],
+    };
+  }
+  const c = countries[0];
   return {
-    name: c.name?.common || name,
-    capital: c.capital?.[0] || 'N/A',
-    region: c.region || 'N/A',
-    population: c.population || 0,
-    flag: c.flag || '',
-    currencies: c.currencies ? Object.values(c.currencies).map(v => v.name).join(', ') : 'N/A',
-    languages: c.languages ? Object.values(c.languages).join(', ') : 'N/A',
+    name: c.name || name,
+    capital: c.capital || 'N/A',
+    currency: c.currency || 'N/A',
+    flag: c.emoji || '',
+    languages: c.languages ? c.languages.map(l => l.name) : [],
   };
 }
 
 export async function convertCurrency(from, to, amount) {
+  const fromUpper = from.toUpperCase();
+  const toUpper = to.toUpperCase();
   const res = await fetch(
-    `https://api.frankfurter.dev/v1/latest?base=${encodeURIComponent(from)}&symbols=${encodeURIComponent(to)}`,
+    `https://open.er-api.com/v6/latest/${encodeURIComponent(fromUpper)}`,
     { headers: { 'User-Agent': BROWSER_UA } }
   );
   if (!res.ok) throw new Error('Currency conversion failed');
   const data = await res.json();
-  const rate = data.rates?.[to.toUpperCase()];
-  if (rate === undefined) throw new Error('Currency conversion failed');
+  if (data.result !== 'success') throw new Error('Currency conversion failed');
+  const rate = data.rates?.[toUpper];
+  if (rate === undefined) throw new Error('Unsupported currency: ' + toUpper);
   const numAmount = parseFloat(amount);
   return {
-    from: from.toUpperCase(),
-    to: to.toUpperCase(),
+    from: fromUpper,
+    to: toUpper,
     amount: numAmount,
     rate,
-    converted: parseFloat((numAmount * rate).toFixed(4)),
+    converted: parseFloat((numAmount * rate).toFixed(2)),
   };
 }

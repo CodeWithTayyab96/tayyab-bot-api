@@ -365,7 +365,8 @@ async function handleCurrency(url) {
   try {
     const result = await convertCurrency(from, to, amount);
     return ok(result);
-  } catch {
+  } catch (e) {
+    if (e.message && e.message.startsWith('Unsupported currency')) return fail(400, e.message);
     return fail(502, 'Currency conversion failed');
   }
 }
