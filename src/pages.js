@@ -94,7 +94,7 @@ GET ${baseUrl}/api/download?url=https://youtube.com/watch?v=dQw4w9WgXcQ&amp;type
 </div>
 
 <p style="text-align:center;margin-top:1rem">
-<a href="/docs">Full Documentation &rarr;</a>
+<a href="/demo">Try the Playground &rarr;</a> &middot; <a href="/docs">Full Documentation &rarr;</a>
 </p>
 </div>
 <div class="footer">
@@ -131,7 +131,7 @@ th{color:#94a3b8}
 <body>
 <div class="container">
 <h1>Tayyab Bot API — Documentation</h1>
-<p><a href="/">&larr; Home</a></p>
+<p><a href="/">&larr; Home</a> &middot; <a href="/demo">Playground</a></p>
 
 <h2>Authentication</h2>
 <p>Every request requires an API key, passed as:</p>

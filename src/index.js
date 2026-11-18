@@ -9,6 +9,7 @@ import { textToSpeech } from './tts.js';
 import { generateQrSvg } from './qr.js';
 import { generateWelcomeCard } from './welcome.js';
 import { landingPage, docsPage } from './pages.js';
+import { demoPage } from './demo.js';
 import { generateGoodbyeCard, generateRankCard, generateQuoteCard, generateWantedCard, generateJailCard, generateFakeTweetCard, generateFakeYtCommentCard } from './cards.js';
 import { imgBlur, imgPixelate, imgGrayscale, imgCircle, imgUpscale, imgMeme } from './imgfx.js';
 import { calculate, lookupCountry, convertCurrency } from './tools.js';
@@ -29,6 +30,7 @@ export default {
 
     if (path === '/') return landingPage(baseUrl);
     if (path === '/docs') return docsPage(baseUrl);
+    if (path === '/demo') return demoPage(baseUrl);
 
     if (path.startsWith('/files/')) {
       const key = path.slice(7);
